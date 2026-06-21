@@ -24,11 +24,11 @@ All configurable values live in `.env`.
 - `LIFE360_ACCESS_TOKEN`: Life360 Bearer token. This is the easiest no-password setup path.
 - `LIFE360_USERNAME`: Optional label/account email. It is not used when `LIFE360_ACCESS_TOKEN` is set.
 - `LIFE360_BASE_URL`: Life360 API base URL. Defaults to the current web client host.
-- `LIFE360_IMPERSONATE`: Browser profile used for Life360 requests. Defaults to `chrome124`.
+- `LIFE360_IMPERSONATE`: Comma-separated browser profiles used for Life360 requests. Defaults to `chrome124,chrome120,chrome119`.
 - `LIFE360_PASSWORD`, `LIFE360_CLIENT_BASIC`: Optional fallback values for fetching a token via the OAuth password grant.
 - `LIFE360_MEMBER_ID`: Optional exact Life360 member id for Neil.
 - `LIFE360_MEMBER_NAME`: Name fallback when `LIFE360_MEMBER_ID` is not set.
-- `LIFE360_CIRCLE_ID`: Optional circle id to restrict searches.
+- `LIFE360_CIRCLE_ID`: Optional circle id to restrict searches. Setting it avoids an extra Life360 circle-list request.
 - `POLL_SECONDS`: Poll interval.
 - `STATE_FILE`: JSON file storing the last announced city/town.
 - `ANNOUNCE_ON_STARTUP`: If `true`, announces the current place on first run.

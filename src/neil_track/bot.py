@@ -30,7 +30,7 @@ class Config:
     life360_client_basic: str
     life360_access_token: str | None
     life360_base_url: str
-    life360_impersonate: str
+    life360_impersonate: tuple[str, ...]
     life360_member_id: str | None
     life360_member_name: str
     life360_circle_id: str | None
@@ -62,11 +62,21 @@ class Place:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    load_dotenv(dotenv_path=Path(".env"))
+    load_dotenv(dotenv_path=find_env_file())
     config = load_config()
     LOG.info("Starting Neil Track bot for Discord channel %s", config.discord_channel_id)
     bot = NeilTrackBot(config)
     bot.run(config.discord_bot_token)
+
+
+def find_env_file() -> Path:
+    search_roots = [Path.cwd(), Path(__file__).resolve()]
+    for root in search_roots:
+        for directory in [root, *root.parents]:
+            env_file = directory / ".env"
+            if env_file.exists():
+                return env_file
+    return Path(".env")
 
 
 def load_config() -> Config:
@@ -87,7 +97,7 @@ def load_config() -> Config:
         life360_client_basic=life360_client_basic or "",
         life360_access_token=life360_access_token,
         life360_base_url=os.getenv("LIFE360_BASE_URL", DEFAULT_LIFE360_BASE_URL).rstrip("/"),
-        life360_impersonate=os.getenv("LIFE360_IMPERSONATE", "chrome124"),
+        life360_impersonate=parse_csv(os.getenv("LIFE360_IMPERSONATE", "chrome124,chrome120,chrome119")),
         life360_member_id=optional_env("LIFE360_MEMBER_ID"),
         life360_member_name=os.getenv("LIFE360_MEMBER_NAME", "Neil"),
         life360_circle_id=optional_env("LIFE360_CIRCLE_ID"),
@@ -121,6 +131,13 @@ def optional_env(name: str) -> str | None:
 
 def parse_bool(value: str) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def parse_csv(value: str) -> tuple[str, ...]:
+    values = tuple(part.strip() for part in value.split(",") if part.strip())
+    if not values:
+        raise RuntimeError("LIFE360_IMPERSONATE must include at least one browser profile")
+    return values
 
 
 class NeilTrackBot(discord.Client):
@@ -277,23 +294,45 @@ class Life360Client:
         return headers
 
     async def get(self, url: str, headers: dict[str, str]) -> curl_requests.Response:
-        return await asyncio.to_thread(
-            curl_requests.get,
-            url,
-            headers=headers,
-            impersonate=self.config.life360_impersonate,
-            timeout=30,
-        )
+        return await self.request_with_impersonation("GET", url, headers)
 
     async def post(self, url: str, headers: dict[str, str], data: dict[str, str]) -> curl_requests.Response:
-        return await asyncio.to_thread(
-            curl_requests.post,
-            url,
-            headers=headers,
-            data=data,
-            impersonate=self.config.life360_impersonate,
-            timeout=30,
-        )
+        return await self.request_with_impersonation("POST", url, headers, data=data)
+
+    async def request_with_impersonation(
+        self,
+        method: str,
+        url: str,
+        headers: dict[str, str],
+        data: dict[str, str] | None = None,
+    ) -> curl_requests.Response:
+        last_response: curl_requests.Response | None = None
+        last_error: Exception | None = None
+        for impersonate in self.config.life360_impersonate:
+            try:
+                response = await asyncio.to_thread(
+                    curl_requests.request,
+                    method,
+                    url,
+                    headers=headers,
+                    data=data,
+                    impersonate=impersonate,
+                    timeout=30,
+                )
+            except Exception as exc:
+                last_error = exc
+                LOG.warning("Life360 request failed with impersonate=%s: %s", impersonate, exc)
+                continue
+            if response.status_code != 403:
+                return response
+            last_response = response
+            LOG.warning("Life360 returned 403 with impersonate=%s for %s", impersonate, url)
+
+        if last_response is not None:
+            return last_response
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError("No Life360 impersonation profiles were configured")
 
     def is_target_member(self, member: dict[str, Any]) -> bool:
         if self.config.life360_member_id and str(member.get("id")) == self.config.life360_member_id:
