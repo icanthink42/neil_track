@@ -33,6 +33,6 @@ All configurable values live in `.env`.
 - `STATE_FILE`: JSON file storing the last announced city/town.
 - `ANNOUNCE_ON_STARTUP`: If `true`, announces the current place on first run.
 - `NOMINATIM_USER_AGENT`: User agent sent to OpenStreetMap Nominatim reverse geocoding.
-- `DISCORD_MESSAGE_TEMPLATE`: Announcement format. Available variables include `{name}`, `{place}`, `{city}`, `{state}`, `{country}`, `{lat}`, `{lon}`, `{route_percent}`, and `{route_percent_rounded}`.
+- `DISCORD_MESSAGE_TEMPLATE`: Announcement format. Available variables include `{name}`, `{place}`, `{city}`, `{state}`, `{country}`, `{route_percent}`, and `{route_percent_rounded}`.
 
 The Life360 endpoints follow the dltHub Life360 context: base URL `https://www.life360.com/v3`, OAuth2 password grant at `/oauth2/token` when using the fallback credential flow, and Bearer-authenticated API requests for circles and members.

@@ -92,7 +92,7 @@ def load_config() -> Config:
         life360_circle_id=optional_env("LIFE360_CIRCLE_ID"),
         poll_seconds=int(os.getenv("POLL_SECONDS", "300")),
         state_file=Path(os.getenv("STATE_FILE", "state.json")),
-        announce_on_startup=parse_bool(os.getenv("ANNOUNCE_ON_STARTUP", "false")),
+        announce_on_startup=parse_bool(os.getenv("ANNOUNCE_ON_STARTUP", "true")),
         nominatim_user_agent=os.getenv("NOMINATIM_USER_AGENT", "neil-track-discord-bot/1.0"),
         discord_message_template=os.getenv(
             "DISCORD_MESSAGE_TEMPLATE",
@@ -192,8 +192,6 @@ class NeilTrackBot(discord.Client):
             state=place.state,
             country=place.country,
             place=place.label,
-            lat=f"{location.latitude:.5f}",
-            lon=f"{location.longitude:.5f}",
             route_percent=f"{route_percent:.1f}",
             route_percent_rounded=str(round(route_percent)),
         )
