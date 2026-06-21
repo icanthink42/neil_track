@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neil-track"
+version = "0.1.0"
+description = "Discord bot that announces when Neil arrives in a new town or city via Life360."
+requires-python = ">=3.11"
+dependencies = [
+    "aiohttp>=3.9",
+    "curl_cffi>=0.15",
+    "discord.py>=2.4",
+    "python-dotenv>=1.0",
+]
+
+[project.scripts]
+neil-track = "neil_track.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
