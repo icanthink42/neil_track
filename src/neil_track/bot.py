@@ -64,6 +64,7 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     load_dotenv(dotenv_path=Path(".env"))
     config = load_config()
+    LOG.info("Starting Neil Track bot for Discord channel %s", config.discord_channel_id)
     bot = NeilTrackBot(config)
     bot.run(config.discord_bot_token)
 
