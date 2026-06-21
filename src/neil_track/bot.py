@@ -16,6 +16,8 @@ from dotenv import load_dotenv
 
 LOG = logging.getLogger("neil_track")
 DEFAULT_LIFE360_BASE_URL = "https://api-cloudfront.life360.com/v3"
+DEFAULT_LIFE360_CIRCLE_ID = "2d0f8563-293e-4963-a707-21dea065b0d0"
+DEFAULT_LIFE360_IMPERSONATE = "chrome124,chrome120,chrome119"
 NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse"
 SEATTLE = (47.6062, -122.3321)
 AUSTIN = (30.2672, -97.7431)
@@ -97,10 +99,10 @@ def load_config() -> Config:
         life360_client_basic=life360_client_basic or "",
         life360_access_token=life360_access_token,
         life360_base_url=os.getenv("LIFE360_BASE_URL", DEFAULT_LIFE360_BASE_URL).rstrip("/"),
-        life360_impersonate=parse_csv(os.getenv("LIFE360_IMPERSONATE", "chrome124,chrome120,chrome119")),
+        life360_impersonate=parse_impersonation_profiles(os.getenv("LIFE360_IMPERSONATE", "")),
         life360_member_id=optional_env("LIFE360_MEMBER_ID"),
         life360_member_name=os.getenv("LIFE360_MEMBER_NAME", "Neil"),
-        life360_circle_id=optional_env("LIFE360_CIRCLE_ID"),
+        life360_circle_id=optional_env("LIFE360_CIRCLE_ID") or DEFAULT_LIFE360_CIRCLE_ID,
         poll_seconds=int(os.getenv("POLL_SECONDS", "300")),
         state_file=Path(os.getenv("STATE_FILE", "state.json")),
         announce_on_startup=parse_bool(os.getenv("ANNOUNCE_ON_STARTUP", "true")),
@@ -133,8 +135,10 @@ def parse_bool(value: str) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
-def parse_csv(value: str) -> tuple[str, ...]:
-    values = tuple(part.strip() for part in value.split(",") if part.strip())
+def parse_impersonation_profiles(value: str) -> tuple[str, ...]:
+    configured = [part.strip() for part in value.split(",") if part.strip()]
+    defaults = [part.strip() for part in DEFAULT_LIFE360_IMPERSONATE.split(",") if part.strip()]
+    values = tuple(dict.fromkeys([*configured, *defaults]))
     if not values:
         raise RuntimeError("LIFE360_IMPERSONATE must include at least one browser profile")
     return values
